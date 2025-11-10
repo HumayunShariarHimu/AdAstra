@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdAstra — AI Advertisement Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/brain.js@2.0.0-beta.2/dist/brain-browser.min.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;margin:0;padding:0;}
+body{font-family:"Noto Sans Bengali",sans-serif;background:#0d1117;color:#e6edf3;line-height:1.5;display:flex;flex-direction:column;min-height:100vh;transition:0.3s;}
+h1{text-align:center;font-size:2rem;margin:20px 0;background:linear-gradient(90deg,#ffce00,#ff7b00);-webkit-background-clip:text;color:transparent;}
+p{text-align:center;font-size:1.3rem;margin:10px 0;background:linear-gradient(90deg,#ffce00,#ff7b00);-webkit-background-clip:text;color:transparent;}
+.container{flex:1 0 auto;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding:0 15px;}
+.card{background:#161b22;padding:20px 25px;border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,0.5);transition:transform 0.2s;}
+.card:hover{transform:translateY(-5px);}
+label{display:block;margin-top:12px;margin-bottom:6px;font-weight:500;}
+input,select,textarea{width:100%;padding:12px;border-radius:10px;border:none;background:#21262d;color:#e6edf3;font-size:14px;transition:0.2s;}
+input:focus,textarea:focus,select:focus{outline:none;background:#2a2f3b;}
+button.btn{background:linear-gradient(90deg,#ff7b00,#ffce00);color:#0d1117;padding:12px;font-weight:700;border-radius:12px;margin-top:16px;transition:0.2s;cursor:pointer;}
+button.btn:hover{opacity:0.9;transform:scale(1.03);}
+button.secondary{background:#30363d;color:#e6edf3;cursor:pointer;}
+button.secondary:hover{opacity:0.9;transform:scale(1.03);}
+.variant-card{background:#1f2937;padding:15px 18px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3);margin-top:12px;}
+.variant-card b{font-size:15px;}
+.variant-card p{margin:8px 0;font-size:14px;}
+.cta-btn{display:inline-block;margin-top:6px;padding:8px 12px;background:#ff7b00;color:#0d1117;border-radius:8px;font-weight:600;text-decoration:none;transition:0.2s;}
+.cta-btn:hover{background:#ffce00;transform:scale(1.05);}
+footer{margin-top:10px;text-align:center;font-size:13px;opacity:0.7;flex-shrink:0;}
+
+/* Light Mode */
+body.light{background:#f0f0f0;color:#111;}
+body.light .card{background:#fff;color:#111;}
+body.light input,body.light select,body.light textarea{background:#eaeaea;color:#111;}
+body.light .variant-card{background:#d9d9d9;color:#111;}
+body.light button.btn{color:#111;}
+
+/* Mobile Responsive */
+@media(max-width:768px){
+  h1{font-size:1.7rem;}
+  input,select,textarea{padding:10px;font-size:13px;}
+  button.btn, button.secondary{flex:1;padding:12px;font-size:14px;}
+  .card{padding:15px;}
+}
+@media(max-width:480px){
+  h1{font-size:1.5rem;}
+  input,select,textarea{padding:8px;font-size:13px;}
+  button.btn, button.secondary{padding:10px;font-size:13px;}
+  .card{padding:12px;}
+}
+</style>
+</head>
+<body>
+
+<h1>✨ AdAstra  ✨</h1>
+<center><p>AI Advertisement Generator</p></center>
+<div class="container">
+  <div class="card">
+    <form id="adForm" onsubmit="return false">
+      <label>নাম</label>
+      <input id="name" placeholder="রাফি আহমেদ">
+      <label>পরিচিতি / Bio</label>
+      <textarea id="bio" placeholder="আমি একজন টেক লাভার, নতুন গ্যাজেট ব্যবহার করতে ভালোবাসি"></textarea>
+      <label>বয়স</label>
+      <input id="age" type="number" value="25">
+      <label>লোকেশন</label>
+      <input id="city" value="Dhaka">
+      <label>ব্যক্তিত্ব / Persona (কমা দিয়ে)</label>
+      <input id="persona" placeholder="adventurous,tech_savvy,price_sensitive">
+      <label>প্ল্যাটফর্ম</label>
+      <select id="platform">
+        <option>Facebook</option><option>Instagram</option><option>Google</option><option>SMS</option>
+      </select>
+      <label>প্রি-সিলেক্টেড পণ্য</label>
+      <select id="productSelect">
+        <option value="phone">Phone X Pro — 120Hz Display, 5G, 5000mAh</option>
+        <option value="laptop">UltraBook Z — Intel i7, 16GB RAM, 512GB SSD</option>
+        <option value="watch">SmartWatch Neo — AMOLED, SpO2, 7-Day Battery</option>
+        <option value="earbud">AirBeats 3 — Noise Cancellation, 24hr Playtime</option>
+      </select>
+
+      <hr style="margin:12px 0; border-color: rgba(255,255,255,0.1)" />
+      <h3>Custom Product (ঐচ্ছিক)</h3>
+      <label>পণ্যের নাম</label>
+      <input id="customTitle" placeholder="নতুন পণ্য শিরোনাম">
+      <label>ফিচারসমূহ (কমা দিয়ে)</label>
+      <input id="customFeatures" placeholder="Feature1, Feature2, Feature3">
+      <label>মূল্য (৳)</label>
+      <input id="customPrice" type="number" placeholder="19999">
+      <label>অফার (ঐচ্ছিক)</label>
+      <input id="customOffer" placeholder="Special Discount!">
+      <label>টোন</label>
+      <select id="tone">
+        <option>auto (AI নির্ধারণ করবে)</option>
+        <option>urgent</option>
+        <option>value</option>
+        <option>social</option>
+        <option>playful</option>
+      </select>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn" id="generateBtn">✨ অ্যাড জেনারেট করুন</button>
+        <button class="secondary" id="downloadJson">💾 Download JSON</button>
+        <button class="secondary" id="copyAll">📋 Copy All Ads</button>
+        <button class="secondary" id="toggleTheme">🌓 Light/Dark</button>
+      </div>
+    </form>
+
+    <div id="variants" style="margin-top:20px;display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+
+<footer>
+ All rights reserved  © Humayun Shariar Himu
+</footer>
+
+<script>
+const el=id=>document.getElementById(id);
+const clean=txt=>txt.replace(/১০০%|নিশ্চিত|গ্যারান্টি/g,"🔒");
+
+const toneNet=new brain.NeuralNetwork({hiddenLayers:[3]});
+toneNet.train([
+  {input:{age:0.2,interest:0.9},output:{urgent:1}},
+  {input:{age:0.8,interest:0.3},output:{value:1}},
+  {input:{age:0.5,interest:0.7},output:{playful:1}},
+  {input:{age:0.3,interest:0.4},output:{social:1}}
+]);
+
+async function motivationScore(age, persona){
+  const keywords=["tech","price","adventurous","fashion","social"];
+  const pScore=keywords.reduce((s,k)=>s+(persona.includes(k)?1:0),0);
+  const t=tf.tensor2d([[age/100,pScore/5]]);
+  const w=tf.tensor2d([[0.8],[0.6]]);
+  const res=t.matMul(w).dataSync()[0];
+  return Math.min(1,Math.max(0,res));
+}
+
+let currentAds=[];
+async function generateAds(){
+  const name=el("name").value.trim();
+  const age=parseInt(el("age").value);
+  const city=el("city").value.trim();
+  const persona=el("persona").value.toLowerCase();
+  const product=el("productSelect").value;
+  const price=parseFloat(el("customPrice").value)||0;
+  const offer=el("customOffer").value||"";
+  const customTitle=el("customTitle").value.trim();
+  const customFeatures=el("customFeatures").value.trim();
+  const toneSel=el("tone").value;
+
+  const motivation=await motivationScore(age,persona);
+  const predictedTone=Object.keys(toneNet.run({age:age/100,interest:motivation}))
+        .reduce((a,b)=>toneNet.run({age:age/100,interest:motivation})[a]>toneNet.run({age:age/100,interest:motivation})[b]?a:b);
+  const tone=toneSel.includes("auto")?predictedTone:toneSel;
+
+  const products={
+    phone:{title:"Phone X Pro",features:"120Hz Display, 5G, 5000mAh",cta:"📱 এখনই অর্ডার করুন!"},
+    laptop:{title:"UltraBook Z",features:"Intel i7, 16GB RAM, 512GB SSD",cta:"💻 আজই নিন!"},
+    watch:{title:"SmartWatch Neo",features:"AMOLED, SpO2, 7-Day Battery",cta:"⌚ স্মার্টনেস হাতের মুঠোয়!"},
+    earbud:{title:"AirBeats 3",features:"Noise Cancellation, 24hr Playtime",cta:"🎧 সাউন্ডে হারিয়ে যান!"}
+  };
+  
+  let p=products[product];
+  if(customTitle) p={title:customTitle,features:customFeatures,cta:"📌 নতুন পণ্য!"};
+
+  const suffix=["🔥 সময় সীমিত!","💥 স্পেশাল অফার!","🎁 সীমিত স্টক!"];
+  currentAds=[];
+  for(let i=0;i<5;i++){
+    let headline,body;
+    if(tone==="urgent") headline=`💥শেষ সুযোগ! ${p.title} মাত্র ৳${price}`;
+    else if(tone==="value") headline=`💡${p.title}: দামে কম, ফিচারে সেরা`;
+    else if(tone==="social") headline=`👥 সবাই নিচ্ছে ${p.title}`;
+    else headline=`✨${p.title} নিন, হয়ে যান স্টাইলিশ!`;
+
+    body=`${name?name+" এর মতো ":""}${city} অঞ্চলের ${persona.replace(/_/g," ")} গ্রাহকদের জন্য ${p.title} এখন সহজলভ্য। ${p.features} — ${offer} ${p.cta}`;
+    currentAds.push({headline:clean(headline),body:clean(body+" "+suffix[Math.floor(Math.random()*suffix.length)]),cta:p.cta});
+  }
+
+  el("variants").innerHTML=currentAds.map(a=>`<div class="variant-card"><b>${a.headline}</b><p>${a.body}</p><a href="#" class="cta-btn">${a.cta}</a></div>`).join("");
+}
+
+el("generateBtn").onclick=generateAds;
+el("downloadJson").onclick=function(){
+  if(currentAds.length===0){alert("প্রথমে অ্যাড জেনারেট করুন");return;}
+  const dataStr="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(currentAds,null,2));
+  const dlAnchor=document.createElement('a');
+  dlAnchor.setAttribute("href",dataStr);
+  dlAnchor.setAttribute("download","ads.json");
+  dlAnchor.click();
+}
+el("copyAll").onclick=function(){
+  if(currentAds.length===0){alert("প্রথমে অ্যাড জেনারেট করুন");return;}
+  const text=currentAds.map(a=>a.headline+"\n"+a.body).join("\n\n");
+  navigator.clipboard.writeText(text);
+  alert("সব অ্যাড টেক্সট কপি করা হয়েছে!");
+}
+el("toggleTheme").onclick=function(){document.body.classList.toggle("light");}
+</script>
+
+</body>
+</html>
